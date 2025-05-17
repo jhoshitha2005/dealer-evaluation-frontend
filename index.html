@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dealer Evaluation Frontend</title>
+</head>
+<body>
+  <h2>Select a Product</h2>
+  <select id="productsDropdown">
+    <option value="">--Select Product--</option>
+  </select>
+
+  <script>
+    const apiBase = 'http://localhost:3000'; // Make sure this matches your backend
+
+    const productsDropdown = document.getElementById('productsDropdown');
+    const dealersDropdown = document.createElement('select');
+    const priceDiv = document.createElement('div');
+
+    document.body.appendChild(dealersDropdown);
+    document.body.appendChild(priceDiv);
+
+    // Load products
+    fetch(`${apiBase}/api/products`)
+      .then(res => res.json())
+      .then(products => {
+        products.forEach(product => {
+          let option = document.createElement('option');
+          option.value = product;
+          option.text = product;
+          productsDropdown.appendChild(option);
+        });
+      });
+
+    // When product is selected
+    productsDropdown.addEventListener('change', () => {
+      const selectedProduct = productsDropdown.value;
+      dealersDropdown.innerHTML = '<option value="">--Select Dealer--</option>';
+      if (!selectedProduct) return;
+
+      fetch(`${apiBase}/api/dealers?product=${selectedProduct}`)
+        .then(res => res.json())
+        .then(dealers => {
+          dealers.forEach(dealer => {
+            let option = document.createElement('option');
+            option.value = dealer;
+            option.text = dealer;
+            dealersDropdown.appendChild(option);
+          });
+
+          fetch(`${apiBase}/api/prices?product=${selectedProduct}`)
+            .then(res => res.json())
+            .then(data => {
+              priceDiv.innerHTML = `<h3>Prices from all dealers:</h3><ul>${data.map(d => `<li>${d.dealer}: ₹${d.price}</li>`).join('')}</ul>`;
+            });
+        });
+    });
+
+    // When dealer is selected
+    dealersDropdown.addEventListener('change', () => {
+      const selectedProduct = productsDropdown.value;
+      const selectedDealer = dealersDropdown.value;
+      if (!selectedDealer) return;
+
+      fetch(`${apiBase}/api/price?product=${selectedProduct}&dealer=${selectedDealer}`)
+        .then(res => res.json())
+        .then(data => {
+          priceDiv.innerHTML = `<h3>Selected Dealer Price:</h3><p>${selectedDealer} offers ₹${data.price}</p>`;
+        });
+    });
+  </script>
+</body>
+</html>
